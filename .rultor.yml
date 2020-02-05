@@ -1,0 +1,26 @@
+---
+docker:
+  image: g4s8/rultor-jdk11:alpine3.10
+assets:
+  settings.xml: yegor256/home#assets/vertx-server/settings.xml
+  pubring.gpg: yegor256/home#assets/pubring.gpg
+  secring.gpg: yegor256/home#assets/secring.gpg
+env:
+  JAVA_HOME: /usr/lib/jvm/java-11-openjdk
+install: |
+  export LC_ALL=en_US.UTF-8
+  export LANG=en_US.UTF-8
+  export LANGUAGE=en_US.UTF-8
+merge:
+  script: |
+    pdd -f /dev/null
+    mvn clean install -Pqulice --errors --settings ../settings.xml
+deploy:
+  script: |
+    echo There is nothing to deploy
+    exit 1
+release:
+  script: |-
+    mvn versions:set "-DnewVersion=${tag}" --settings ../settings.xml
+    git commit -am "${tag}"
+    mvn clean deploy -Pasto -Psonatype -Pqulice --errors --settings ../settings.xml
