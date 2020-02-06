@@ -25,11 +25,10 @@ SOFTWARE.
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>com.jcabi</groupId>
-    <artifactId>parent</artifactId>
-    <version>0.49.5</version>
+    <groupId>com.artipie</groupId>
+    <artifactId>ppom</artifactId>
+    <version>0.2.0</version>
   </parent>
-  <groupId>com.artipie</groupId>
   <artifactId>vertx-server</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
@@ -48,6 +47,7 @@ SOFTWARE.
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <junit-platform.version>5.3.1</junit-platform.version>
+    <vertx.version>3.8.5</vertx.version>
   </properties>
   <developers>
     <developer>
@@ -84,37 +84,42 @@ SOFTWARE.
   </distributionManagement>
   <dependencies>
     <dependency>
+      <groupId>com.artipie</groupId>
+      <artifactId>http</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-rx-java2</artifactId>
+      <version>${vertx.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>28.2-jre</version>
     </dependency>
     <dependency>
       <groupId>com.jcabi</groupId>
       <artifactId>jcabi-log</artifactId>
-      <version>0.18.1</version>
     </dependency>
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>asto</artifactId>
-      <version>0.11.1</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
-      <version>${junit-platform.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>${junit-platform.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-library</artifactId>
-      <version>2.1</version>
-      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -165,6 +170,14 @@ SOFTWARE.
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>9</source>
+          <target>9</target>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -181,7 +194,6 @@ SOFTWARE.
                 <exclude>findbugs:.*</exclude>
                 <exclude>duplicatefinder:.*</exclude>
                 <exclude>xml:/src/it/settings.xml</exclude>
-                <exclude>checkstyle:/src/test/resources-binary/.*</exclude>
               </excludes>
             </configuration>
           </plugin>
