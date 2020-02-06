@@ -26,14 +26,15 @@ package com.artipie.vertx;
 import com.artipie.asto.ByteArray;
 import com.artipie.http.RequestLine;
 import com.artipie.http.Slice;
-import io.reactivex.rxjava3.core.Flowable;
-import io.vertx.reactivex.core.buffer.Buffer;
+import io.reactivex.Flowable;
+import io.vertx.core.Handler;
 import io.vertx.reactivex.core.Vertx;
+import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.http.HttpServer;
 import io.vertx.reactivex.core.http.HttpServerRequest;
 import io.vertx.reactivex.core.http.HttpServerResponse;
-import org.reactivestreams.FlowAdapters;
 import java.util.Map;
+import org.reactivestreams.FlowAdapters;
 
 /**
  * Vert.x Slice.
@@ -63,6 +64,11 @@ public final class VertxSliceServer {
     private HttpServer server;
 
     /**
+     * An object to sync on.
+     */
+    private final Object sync;
+
+    /**
      * Ctor.
      *
      * @param served The slice to be served.
@@ -82,15 +88,36 @@ public final class VertxSliceServer {
         this.vertx = vertx;
         this.served = served;
         this.port = port;
+        this.sync = new Object();
     }
 
     /**
      * Start the server.
      */
-    public synchronized void start() {
+    public void start() {
+        synchronized (this.sync) {
+            this.server = this.vertx.createHttpServer();
+            this.server.requestHandler(this.proxyHandler());
+            this.server.rxListen(this.port).blockingGet();
+        }
+    }
+
+    /**
+     * Stop the server.
+     */
+    public void stop() {
+        synchronized (this.sync) {
+            this.server.rxClose().blockingAwait();
+        }
+    }
+
+    /**
+     * A handler which proxy incoming requests to encapsulated slice.
+     * @return The request handler.
+     */
+    private Handler<HttpServerRequest> proxyHandler() {
         final int buf = 8 * 1024;
-        this.server = vertx.createHttpServer();
-        server.requestHandler((HttpServerRequest req) -> {
+        return (HttpServerRequest req) ->
             this.served.response(
                 new RequestLine(
                     req.rawMethod(),
@@ -100,30 +127,23 @@ public final class VertxSliceServer {
                 req.headers(),
                 FlowAdapters.toFlowPublisher(
                     req.toFlowable()
-                        .flatMap(buffer ->
-                            Flowable.fromArray(
+                        .flatMap(
+                            buffer -> Flowable.fromArray(
                                 new ByteArray(buffer.getBytes()).boxedBytes()
                             )
                         )
                 )
-            ).send((code, headers, body) -> {
-                final HttpServerResponse response = req.response().setStatusCode(code);
-                for (Map.Entry<String, String> header : headers) {
-                    response.putHeader(header.getKey(), header.getValue());
+            ).send(
+                (code, headers, body) -> {
+                    final HttpServerResponse response = req.response().setStatusCode(code);
+                    for (final Map.Entry<String, String> header : headers) {
+                        response.putHeader(header.getKey(), header.getValue());
+                    }
+                    Flowable.fromPublisher(FlowAdapters.toPublisher(body))
+                        .buffer(buf)
+                        .map(bytes -> Buffer.buffer(new ByteArray(bytes).primitiveBytes()))
+                        .subscribe(req.response().toSubscriber());
                 }
-                Flowable.fromPublisher(FlowAdapters.toPublisher(body))
-                    .buffer(buf)
-                    .map(bytes -> Buffer.buffer(new ByteArray(bytes).primitiveBytes()))
-                    .subscribe(req.response().toSubscriber());
-            });
-        });
-        server.rxListen(port).blockingGet();
-    }
-
-    /**
-     * Stop the server.
-     */
-    public synchronized void stop() {
-        this.server.rxClose().blockingAwait();
+            );
     }
 }
