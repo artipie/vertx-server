@@ -33,6 +33,7 @@ import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.http.HttpServer;
 import io.vertx.reactivex.core.http.HttpServerRequest;
 import io.vertx.reactivex.core.http.HttpServerResponse;
+import java.io.Closeable;
 import java.util.Map;
 import org.reactivestreams.FlowAdapters;
 
@@ -41,7 +42,7 @@ import org.reactivestreams.FlowAdapters;
  *
  * @since 0.1
  */
-public final class VertxSliceServer {
+public final class VertxSliceServer implements Closeable {
 
     /**
      * The Vert.x.
@@ -109,6 +110,11 @@ public final class VertxSliceServer {
         synchronized (this.sync) {
             this.server.rxClose().blockingAwait();
         }
+    }
+
+    @Override
+    public void close() {
+        this.stop();
     }
 
     /**
