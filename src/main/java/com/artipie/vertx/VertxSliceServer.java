@@ -123,33 +123,31 @@ public final class VertxSliceServer implements Closeable {
      */
     private Handler<HttpServerRequest> proxyHandler() {
         final int buf = 8 * 1024;
-        return (HttpServerRequest req) ->
-            this.served.response(
-                new RequestLine(
-                    req.rawMethod(),
-                    req.uri(),
-                    req.version().toString()
-                ).toString(),
-                req.headers(),
-                FlowAdapters.toFlowPublisher(
-                    req.toFlowable()
-                        .flatMap(
-                            buffer -> Flowable.fromArray(
-                                new ByteArray(buffer.getBytes()).boxedBytes()
-                            )
-                        )
+        return (HttpServerRequest req) -> this.served.response(
+            new RequestLine(
+                req.rawMethod(),
+                req.uri(),
+                req.version().toString()
+            ).toString(),
+            req.headers(),
+            FlowAdapters.toFlowPublisher(
+                req.toFlowable().flatMap(
+                    buffer -> Flowable.fromArray(
+                        new ByteArray(buffer.getBytes()).boxedBytes()
+                    )
                 )
-            ).send(
-                (code, headers, body) -> {
-                    final HttpServerResponse response = req.response().setStatusCode(code);
-                    for (final Map.Entry<String, String> header : headers) {
-                        response.putHeader(header.getKey(), header.getValue());
-                    }
-                    Flowable.fromPublisher(FlowAdapters.toPublisher(body))
-                        .buffer(buf)
-                        .map(bytes -> Buffer.buffer(new ByteArray(bytes).primitiveBytes()))
-                        .subscribe(req.response().toSubscriber());
+            )
+        ).send(
+            (code, headers, body) -> {
+                final HttpServerResponse response = req.response().setStatusCode(code);
+                for (final Map.Entry<String, String> header : headers) {
+                    response.putHeader(header.getKey(), header.getValue());
                 }
-            );
+                Flowable.fromPublisher(FlowAdapters.toPublisher(body))
+                    .buffer(buf)
+                    .map(bytes -> Buffer.buffer(new ByteArray(bytes).primitiveBytes()))
+                    .subscribe(req.response().toSubscriber());
+            }
+        );
     }
 }
