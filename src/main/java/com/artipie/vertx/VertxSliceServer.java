@@ -23,9 +23,8 @@
  */
 package com.artipie.vertx;
 
-import com.artipie.asto.ByteArray;
-import com.artipie.http.RequestLine;
 import com.artipie.http.Slice;
+import com.artipie.http.rq.RequestLine;
 import io.reactivex.Flowable;
 import io.vertx.core.Handler;
 import io.vertx.reactivex.core.Vertx;
@@ -34,6 +33,7 @@ import io.vertx.reactivex.core.http.HttpServer;
 import io.vertx.reactivex.core.http.HttpServerRequest;
 import io.vertx.reactivex.core.http.HttpServerResponse;
 import java.io.Closeable;
+import java.nio.ByteBuffer;
 import java.util.Map;
 import org.reactivestreams.FlowAdapters;
 
@@ -122,7 +122,6 @@ public final class VertxSliceServer implements Closeable {
      * @return The request handler.
      */
     private Handler<HttpServerRequest> proxyHandler() {
-        final int buf = 8 * 1024;
         return (HttpServerRequest req) -> this.served.response(
             new RequestLine(
                 req.rawMethod(),
@@ -131,11 +130,7 @@ public final class VertxSliceServer implements Closeable {
             ).toString(),
             req.headers(),
             FlowAdapters.toFlowPublisher(
-                req.toFlowable().flatMap(
-                    buffer -> Flowable.fromArray(
-                        new ByteArray(buffer.getBytes()).boxedBytes()
-                    )
-                )
+                req.toFlowable().map(buffer -> ByteBuffer.wrap(buffer.getBytes()))
             )
         ).send(
             (code, headers, body) -> {
@@ -143,10 +138,12 @@ public final class VertxSliceServer implements Closeable {
                 for (final Map.Entry<String, String> header : headers) {
                     response.putHeader(header.getKey(), header.getValue());
                 }
-                Flowable.fromPublisher(FlowAdapters.toPublisher(body))
-                    .buffer(buf)
-                    .map(bytes -> Buffer.buffer(new ByteArray(bytes).primitiveBytes()))
-                    .subscribe(req.response().toSubscriber());
+                Flowable.fromPublisher(FlowAdapters.toPublisher(body)).map(
+                    buf -> {
+                        final byte[] bytes = new byte[buf.remaining()];
+                        buf.get(bytes);
+                        return Buffer.buffer(bytes);
+                    }).subscribe(req.response().toSubscriber());
             }
         );
     }
