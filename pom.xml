@@ -27,7 +27,7 @@ SOFTWARE.
   <parent>
     <groupId>com.artipie</groupId>
     <artifactId>ppom</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.1</version>
   </parent>
   <artifactId>vertx-server</artifactId>
   <version>1.0-SNAPSHOT</version>
@@ -47,7 +47,6 @@ SOFTWARE.
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <junit-platform.version>5.3.1</junit-platform.version>
-    <vertx.version>3.8.5</vertx.version>
   </properties>
   <developers>
     <developer>
@@ -91,7 +90,6 @@ SOFTWARE.
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-rx-java2</artifactId>
-      <version>${vertx.version}</version>
     </dependency>
     <dependency>
       <groupId>com.jcabi</groupId>
@@ -109,6 +107,8 @@ SOFTWARE.
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
     </dependency>
+
+    <!-- Test only dependencies -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
