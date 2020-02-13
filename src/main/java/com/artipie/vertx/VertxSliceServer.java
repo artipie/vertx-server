@@ -122,29 +122,31 @@ public final class VertxSliceServer implements Closeable {
      * @return The request handler.
      */
     private Handler<HttpServerRequest> proxyHandler() {
-        return (HttpServerRequest req) -> this.served.response(
-            new RequestLine(
-                req.rawMethod(),
-                req.uri(),
-                req.version().toString()
-            ).toString(),
-            req.headers(),
-            FlowAdapters.toFlowPublisher(
-                req.toFlowable().map(buffer -> ByteBuffer.wrap(buffer.getBytes()))
-            )
-        ).send(
-            (code, headers, body) -> {
-                final HttpServerResponse response = req.response().setStatusCode(code);
-                for (final Map.Entry<String, String> header : headers) {
-                    response.putHeader(header.getKey(), header.getValue());
+        return (HttpServerRequest req) -> {
+            this.served.response(
+                new RequestLine(
+                    req.rawMethod(),
+                    req.uri(),
+                    req.version().toString()
+                ).toString(),
+                req.headers(),
+                FlowAdapters.toFlowPublisher(
+                    req.toFlowable().map(buffer -> ByteBuffer.wrap(buffer.getBytes()))
+                )
+            ).send(
+                (code, headers, body) -> {
+                    final HttpServerResponse response = req.response().setStatusCode(code);
+                    for (final Map.Entry<String, String> header : headers) {
+                        response.putHeader(header.getKey(), header.getValue());
+                    }
+                    Flowable.fromPublisher(FlowAdapters.toPublisher(body)).map(
+                        buf -> {
+                            final byte[] bytes = new byte[buf.remaining()];
+                            buf.get(bytes);
+                            return Buffer.buffer(bytes);
+                        }).subscribe(new SubscriberFromResponse(response));
                 }
-                Flowable.fromPublisher(FlowAdapters.toPublisher(body)).map(
-                    buf -> {
-                        final byte[] bytes = new byte[buf.remaining()];
-                        buf.get(bytes);
-                        return Buffer.buffer(bytes);
-                    }).subscribe(req.response().toSubscriber());
-            }
-        );
+            );
+        };
     }
 }

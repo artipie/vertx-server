@@ -23,14 +23,18 @@
  */
 package com.artipie.vertx;
 
+import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.nio.ByteBuffer;
+import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.FlowAdapters;
 
 /**
  * Ensure that {@link VertxSliceServer} works correctly.
@@ -38,11 +42,15 @@ import org.junit.jupiter.api.Test;
  */
 public class VertxSliceServerTest {
 
+    /**
+     * The host to send http requests to.
+     */
+    private static final String HOST = "localhost";
+
     @Test
     public void serverHandlesBasicRequest() throws IOException {
         final int port = this.rndPort();
         final Vertx vertx = Vertx.vertx();
-        final String host = "localhost";
         final String uri = "/hello";
         final String expected = "Hello World!";
         try (VertxSliceServer server = new VertxSliceServer(
@@ -55,8 +63,39 @@ public class VertxSliceServerTest {
         )) {
             server.start();
             final WebClient web = WebClient.create(vertx);
-            final String actual = web.post(port, host, uri)
+            final String actual = web.post(port, VertxSliceServerTest.HOST, uri)
                 .rxSendBuffer(Buffer.buffer(expected.getBytes()))
+                .blockingGet()
+                .bodyAsString();
+            MatcherAssert.assertThat(actual, Matchers.equalTo(expected));
+            web.close();
+        }
+    }
+
+    @Test
+    public void basicGetRequest() throws IOException {
+        final int port = this.rndPort();
+        final Vertx vertx = Vertx.vertx();
+        final String uri = "/hello1";
+        final String expected = "Hello World!!!";
+        try (VertxSliceServer server = new VertxSliceServer(
+            vertx,
+            (line, headers, body) -> connection -> {
+                final int okay = 200;
+                connection.accept(
+                    okay,
+                    Collections.emptyList(),
+                    FlowAdapters.toFlowPublisher(
+                        Flowable.fromArray(ByteBuffer.wrap(expected.getBytes()))
+                    )
+                );
+            },
+            port
+        )) {
+            server.start();
+            final WebClient web = WebClient.create(vertx);
+            final String actual = web.get(port, VertxSliceServerTest.HOST, uri)
+                .rxSend()
                 .blockingGet()
                 .bodyAsString();
             MatcherAssert.assertThat(actual, Matchers.equalTo(expected));
