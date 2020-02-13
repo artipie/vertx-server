@@ -64,7 +64,7 @@ final class SubscriberFromResponse implements Subscriber<Buffer> {
     @Override
     public void onError(final Throwable thr) {
         Logger.error(SubscriberFromResponse.class, "Error occurred: %s", thr.getMessage());
-        this.response.end();
+        this.response.setStatusCode(500).end();
     }
 
     @Override
