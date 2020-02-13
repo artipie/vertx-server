@@ -124,11 +124,7 @@ public final class VertxSliceServer implements Closeable {
     private Handler<HttpServerRequest> proxyHandler() {
         return (HttpServerRequest req) -> {
             this.served.response(
-                new RequestLine(
-                    req.rawMethod(),
-                    req.uri(),
-                    req.version().toString()
-                ).toString(),
+                new RequestLine(req.rawMethod(), req.uri(), req.version().toString()).toString(),
                 req.headers(),
                 FlowAdapters.toFlowPublisher(
                     req.toFlowable().map(buffer -> ByteBuffer.wrap(buffer.getBytes()))
