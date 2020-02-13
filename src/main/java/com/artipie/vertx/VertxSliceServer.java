@@ -140,7 +140,7 @@ public final class VertxSliceServer implements Closeable {
                             final byte[] bytes = new byte[buf.remaining()];
                             buf.get(bytes);
                             return Buffer.buffer(bytes);
-                        }).subscribe(new SubscriberFromResponse(response));
+                        }).subscribe(new DummySubscriber(response));
                 }
             );
         };

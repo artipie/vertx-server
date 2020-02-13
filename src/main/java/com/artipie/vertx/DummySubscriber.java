@@ -31,11 +31,12 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 /**
- * Wrap {@link HttpServerResponse} to behave like a {@link Subscriber}.
+ * A dummy wrapper over {@link HttpServerResponse} to behave like a {@link Subscriber}, which
+ * doesn't care about backpressure.
  *
  * @since 0.1
  */
-final class SubscriberFromResponse implements Subscriber<Buffer> {
+final class DummySubscriber implements Subscriber<Buffer> {
 
     /**
      * The wrapped response.
@@ -46,7 +47,7 @@ final class SubscriberFromResponse implements Subscriber<Buffer> {
      * Ctor.
      * @param response The response.
      */
-    SubscriberFromResponse(final HttpServerResponse response) {
+    DummySubscriber(final HttpServerResponse response) {
         this.response = response;
     }
 
@@ -63,7 +64,7 @@ final class SubscriberFromResponse implements Subscriber<Buffer> {
 
     @Override
     public void onError(final Throwable thr) {
-        Logger.error(SubscriberFromResponse.class, "Error occurred: %s", thr.getMessage());
+        Logger.error(DummySubscriber.class, "Error occurred: %s", thr.getMessage());
         final int internal = 500;
         this.response.setStatusCode(internal).end();
     }
