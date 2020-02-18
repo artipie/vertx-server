@@ -135,12 +135,13 @@ public final class VertxSliceServer implements Closeable {
                     for (final Map.Entry<String, String> header : headers) {
                         response.putHeader(header.getKey(), header.getValue());
                     }
+                    response.setChunked(true);
                     Flowable.fromPublisher(FlowAdapters.toPublisher(body)).map(
                         buf -> {
                             final byte[] bytes = new byte[buf.remaining()];
                             buf.get(bytes);
                             return Buffer.buffer(bytes);
-                        }).subscribe(new DummySubscriber(response));
+                        }).subscribe(response.toSubscriber());
                 }
             );
         };
