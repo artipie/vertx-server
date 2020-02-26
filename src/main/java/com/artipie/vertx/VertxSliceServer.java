@@ -35,7 +35,6 @@ import io.vertx.reactivex.core.http.HttpServerResponse;
 import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import org.reactivestreams.FlowAdapters;
 
 /**
  * Vert.x Slice.
@@ -126,9 +125,7 @@ public final class VertxSliceServer implements Closeable {
             this.served.response(
                 new RequestLine(req.rawMethod(), req.uri(), req.version().toString()).toString(),
                 req.headers(),
-                FlowAdapters.toFlowPublisher(
-                    req.toFlowable().map(buffer -> ByteBuffer.wrap(buffer.getBytes()))
-                )
+                req.toFlowable().map(buffer -> ByteBuffer.wrap(buffer.getBytes()))
             ).send(
                 (code, headers, body) -> {
                     final HttpServerResponse response = req.response().setStatusCode(code);
@@ -136,7 +133,7 @@ public final class VertxSliceServer implements Closeable {
                         response.putHeader(header.getKey(), header.getValue());
                     }
                     response.setChunked(true);
-                    Flowable.fromPublisher(FlowAdapters.toPublisher(body)).map(
+                    Flowable.fromPublisher(body).map(
                         buf -> {
                             final byte[] bytes = new byte[buf.remaining()];
                             buf.get(bytes);
