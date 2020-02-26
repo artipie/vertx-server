@@ -34,7 +34,6 @@ import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.FlowAdapters;
 
 /**
  * Ensure that {@link VertxSliceServer} works correctly.
@@ -85,9 +84,7 @@ public class VertxSliceServerTest {
                 connection.accept(
                     okay,
                     Collections.emptyList(),
-                    FlowAdapters.toFlowPublisher(
-                        Flowable.fromArray(ByteBuffer.wrap(expected.getBytes()))
-                    )
+                    Flowable.fromArray(ByteBuffer.wrap(expected.getBytes()))
                 );
             },
             port
