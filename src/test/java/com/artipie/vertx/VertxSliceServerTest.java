@@ -23,76 +23,182 @@
  */
 package com.artipie.vertx;
 
+import com.artipie.http.Slice;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Ensure that {@link VertxSliceServer} works correctly.
+ *
  * @since 0.1
  */
-public class VertxSliceServerTest {
+public final class VertxSliceServerTest {
 
     /**
      * The host to send http requests to.
      */
     private static final String HOST = "localhost";
 
-    @Test
-    public void serverHandlesBasicRequest() throws IOException {
-        final int port = this.rndPort();
-        final Vertx vertx = Vertx.vertx();
-        final String uri = "/hello";
-        final String expected = "Hello World!";
-        try (VertxSliceServer server = new VertxSliceServer(
-            vertx,
-            (line, headers, body) -> connection -> connection.accept(RsStatus.OK, headers, body),
-            port
-        )) {
-            server.start();
-            final WebClient web = WebClient.create(vertx);
-            final String actual = web.post(port, VertxSliceServerTest.HOST, uri)
-                .rxSendBuffer(Buffer.buffer(expected.getBytes()))
-                .blockingGet()
-                .bodyAsString();
-            MatcherAssert.assertThat(actual, Matchers.equalTo(expected));
-            web.close();
+    /**
+     * Server port.
+     */
+    private int port;
+
+    /**
+     * Vertx instance used in server and client.
+     */
+    private Vertx vertx;
+
+    /**
+     * HTTP client used to send requests to server.
+     */
+    private WebClient client;
+
+    /**
+     * Server instance being tested.
+     */
+    private VertxSliceServer server;
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        this.port = this.rndPort();
+        this.vertx = Vertx.vertx();
+        this.client = WebClient.create(this.vertx);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        if (this.server != null) {
+            this.server.close();
+        }
+        if (this.client != null) {
+            this.client.close();
+        }
+        if (this.vertx != null) {
+            this.vertx.close();
         }
     }
 
     @Test
-    public void basicGetRequest() throws IOException {
-        final int port = this.rndPort();
-        final Vertx vertx = Vertx.vertx();
-        final String uri = "/hello1";
+    public void serverHandlesBasicRequest() {
+        this.start(
+            (line, headers, body) -> connection -> connection.accept(RsStatus.OK, headers, body)
+        );
+        final String expected = "Hello World!";
+        final String actual = this.client.post(this.port, VertxSliceServerTest.HOST, "/hello")
+            .rxSendBuffer(Buffer.buffer(expected.getBytes()))
+            .blockingGet()
+            .bodyAsString();
+        MatcherAssert.assertThat(actual, Matchers.equalTo(expected));
+    }
+
+    @Test
+    public void basicGetRequest() {
         final String expected = "Hello World!!!";
-        try (VertxSliceServer server = new VertxSliceServer(
-            vertx,
+        this.start(
             (line, headers, body) -> connection -> connection.accept(
                 RsStatus.OK,
                 Collections.emptyList(),
                 Flowable.fromArray(ByteBuffer.wrap(expected.getBytes()))
-            ),
-            port
-        )) {
-            server.start();
-            final WebClient web = WebClient.create(vertx);
-            final String actual = web.get(port, VertxSliceServerTest.HOST, uri)
-                .rxSend()
-                .blockingGet()
-                .bodyAsString();
-            MatcherAssert.assertThat(actual, Matchers.equalTo(expected));
-            web.close();
-        }
+            )
+        );
+        final String actual = this.client.get(this.port, VertxSliceServerTest.HOST, "/hello1")
+            .rxSend()
+            .blockingGet()
+            .bodyAsString();
+        MatcherAssert.assertThat(actual, Matchers.equalTo(expected));
+    }
+
+    @Test
+    public void exceptionInSlice() {
+        this.start(
+            (line, headers, body) -> {
+                throw new IllegalStateException("Failed to create response");
+            }
+        );
+        final int code = this.client.get(this.port, VertxSliceServerTest.HOST, "")
+            .rxSend()
+            .blockingGet()
+            .statusCode();
+        MatcherAssert.assertThat(
+            code,
+            Matchers.equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)
+        );
+    }
+
+    @Test
+    public void exceptionInResponse() {
+        this.start(
+            (line, headers, body) -> connection -> {
+                throw new IllegalStateException("Failed to send response");
+            }
+        );
+        final int code = this.client.get(this.port, VertxSliceServerTest.HOST, "")
+            .rxSend()
+            .blockingGet()
+            .statusCode();
+        MatcherAssert.assertThat(
+            code,
+            Matchers.equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)
+        );
+    }
+
+    @Test
+    public void exceptionInResponseAsync() {
+        this.start(
+            (line, headers, body) -> connection -> CompletableFuture.runAsync(
+                () -> {
+                    throw new IllegalStateException("Failed to send response async");
+                }
+            )
+        );
+        final int code = this.client.get(this.port, VertxSliceServerTest.HOST, "")
+            .rxSend()
+            .blockingGet()
+            .statusCode();
+        MatcherAssert.assertThat(
+            code,
+            Matchers.equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)
+        );
+    }
+
+    @Test
+    public void exceptionInBody() {
+        this.start(
+            (line, headers, body) -> connection -> connection.accept(
+                RsStatus.OK,
+                Collections.emptyList(),
+                Flowable.error(new IllegalStateException("Failed to publish body"))
+            )
+        );
+        final int code = this.client.get(this.port, VertxSliceServerTest.HOST, "")
+            .rxSend()
+            .blockingGet()
+            .statusCode();
+        MatcherAssert.assertThat(
+            code,
+            Matchers.equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)
+        );
+    }
+
+    private void start(final Slice slice) {
+        final VertxSliceServer srv = new VertxSliceServer(this.vertx, slice, this.port);
+        srv.start();
+        this.server = srv;
     }
 
     /**

@@ -33,9 +33,13 @@ import io.vertx.reactivex.core.http.HttpServer;
 import io.vertx.reactivex.core.http.HttpServerRequest;
 import io.vertx.reactivex.core.http.HttpServerResponse;
 import java.io.Closeable;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.HttpURLConnection;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Vert.x Slice.
@@ -121,33 +125,68 @@ public final class VertxSliceServer implements Closeable {
      * A handler which proxy incoming requests to encapsulated slice.
      * @return The request handler.
      */
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private Handler<HttpServerRequest> proxyHandler() {
         return (HttpServerRequest req) -> {
-            this.served.response(
-                new RequestLine(req.rawMethod(), req.uri(), req.version().toString()).toString(),
-                req.headers(),
-                req.toFlowable().map(buffer -> ByteBuffer.wrap(buffer.getBytes()))
-            ).send(
-                (status, headers, body) -> {
-                    final int code = Integer.parseInt(status.code());
-                    final HttpServerResponse response = req.response().setStatusCode(code);
-                    for (final Map.Entry<String, String> header : headers) {
-                        response.putHeader(header.getKey(), header.getValue());
+            try {
+                this.serve(req).exceptionally(
+                    throwable -> {
+                        VertxSliceServer.sendError(req.response(), throwable);
+                        return null;
                     }
-                    response.setChunked(true);
-                    final CompletableFuture<HttpServerResponse> promise = new CompletableFuture<>();
-                    Flowable.fromPublisher(body).map(
-                        buf -> {
-                            final byte[] bytes = new byte[buf.remaining()];
-                            buf.get(bytes);
-                            return Buffer.buffer(bytes);
-                        })
-                        .doOnComplete(() -> promise.complete(response))
-                        .doOnError(promise::completeExceptionally)
-                        .subscribe(response.toSubscriber());
-                    return promise.thenCompose(ignored -> CompletableFuture.allOf());
-                }
-            );
+                );
+                //@checkstyle IllegalCatchCheck (1 line)
+            } catch (final Exception ex) {
+                VertxSliceServer.sendError(req.response(), ex);
+            }
         };
+    }
+
+    /**
+     * Server HTTP request.
+     *
+     * @param req HTTP request.
+     * @return Completion of request serving.
+     */
+    private CompletionStage<Void> serve(final HttpServerRequest req) {
+        return this.served.response(
+            new RequestLine(req.rawMethod(), req.uri(), req.version().toString()).toString(),
+            req.headers(),
+            req.toFlowable().map(buffer -> ByteBuffer.wrap(buffer.getBytes()))
+        ).send(
+            (status, headers, body) -> {
+                final int code = Integer.parseInt(status.code());
+                final HttpServerResponse response = req.response().setStatusCode(code);
+                for (final Map.Entry<String, String> header : headers) {
+                    response.putHeader(header.getKey(), header.getValue());
+                }
+                response.setChunked(true);
+                final CompletableFuture<HttpServerResponse> promise = new CompletableFuture<>();
+                Flowable.fromPublisher(body).map(
+                    buf -> {
+                        final byte[] bytes = new byte[buf.remaining()];
+                        buf.get(bytes);
+                        return Buffer.buffer(bytes);
+                    })
+                    .doOnComplete(() -> promise.complete(response))
+                    .doOnError(promise::completeExceptionally)
+                    .subscribe(response.toSubscriber());
+                return promise.thenCompose(ignored -> CompletableFuture.allOf());
+            }
+        );
+    }
+
+    /**
+     * Sends response built from {@link Throwable}.
+     *
+     * @param response Response to write to.
+     * @param throwable Exception to send.
+     */
+    private static void sendError(final HttpServerResponse response, final Throwable throwable) {
+        response.setStatusCode(HttpURLConnection.HTTP_INTERNAL_ERROR);
+        final StringWriter body = new StringWriter();
+        body.append(throwable.toString()).append("\n");
+        throwable.printStackTrace(new PrintWriter(body));
+        response.end(body.toString());
     }
 }
