@@ -35,6 +35,7 @@ import io.vertx.reactivex.core.http.HttpServerResponse;
 import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Vert.x Slice.
@@ -127,18 +128,24 @@ public final class VertxSliceServer implements Closeable {
                 req.headers(),
                 req.toFlowable().map(buffer -> ByteBuffer.wrap(buffer.getBytes()))
             ).send(
-                (code, headers, body) -> {
+                (status, headers, body) -> {
+                    final int code = Integer.parseInt(status.code());
                     final HttpServerResponse response = req.response().setStatusCode(code);
                     for (final Map.Entry<String, String> header : headers) {
                         response.putHeader(header.getKey(), header.getValue());
                     }
                     response.setChunked(true);
+                    final CompletableFuture<Void> promise = new CompletableFuture<>();
                     Flowable.fromPublisher(body).map(
                         buf -> {
                             final byte[] bytes = new byte[buf.remaining()];
                             buf.get(bytes);
                             return Buffer.buffer(bytes);
-                        }).subscribe(response.toSubscriber());
+                        })
+                        .doOnComplete(() -> promise.complete(null))
+                        .doOnError(promise::completeExceptionally)
+                        .subscribe(response.toSubscriber());
+                    return promise;
                 }
             );
         };
