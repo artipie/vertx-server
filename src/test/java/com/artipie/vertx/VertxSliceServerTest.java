@@ -23,6 +23,7 @@
  */
 package com.artipie.vertx;
 
+import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
@@ -54,10 +55,7 @@ public class VertxSliceServerTest {
         final String expected = "Hello World!";
         try (VertxSliceServer server = new VertxSliceServer(
             vertx,
-            (line, headers, body) -> connection -> {
-                final int okay = 200;
-                connection.accept(okay, headers, body);
-            },
+            (line, headers, body) -> connection -> connection.accept(RsStatus.OK, headers, body),
             port
         )) {
             server.start();
@@ -79,14 +77,11 @@ public class VertxSliceServerTest {
         final String expected = "Hello World!!!";
         try (VertxSliceServer server = new VertxSliceServer(
             vertx,
-            (line, headers, body) -> connection -> {
-                final int okay = 200;
-                connection.accept(
-                    okay,
-                    Collections.emptyList(),
-                    Flowable.fromArray(ByteBuffer.wrap(expected.getBytes()))
-                );
-            },
+            (line, headers, body) -> connection -> connection.accept(
+                RsStatus.OK,
+                Collections.emptyList(),
+                Flowable.fromArray(ByteBuffer.wrap(expected.getBytes()))
+            ),
             port
         )) {
             server.start();
