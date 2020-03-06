@@ -135,17 +135,17 @@ public final class VertxSliceServer implements Closeable {
                         response.putHeader(header.getKey(), header.getValue());
                     }
                     response.setChunked(true);
-                    final CompletableFuture<Void> promise = new CompletableFuture<>();
+                    final CompletableFuture<HttpServerResponse> promise = new CompletableFuture<>();
                     Flowable.fromPublisher(body).map(
                         buf -> {
                             final byte[] bytes = new byte[buf.remaining()];
                             buf.get(bytes);
                             return Buffer.buffer(bytes);
                         })
-                        .doOnComplete(() -> promise.complete(null))
+                        .doOnComplete(() -> promise.complete(response))
                         .doOnError(promise::completeExceptionally)
                         .subscribe(response.toSubscriber());
-                    return promise;
+                    return promise.thenCompose(ignored -> CompletableFuture.allOf());
                 }
             );
         };
