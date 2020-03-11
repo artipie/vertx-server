@@ -28,15 +28,23 @@ import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
+import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.TypeSafeMatcher;
+import org.hamcrest.core.AllOf;
+import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -125,74 +133,64 @@ public final class VertxSliceServerTest {
 
     @Test
     public void exceptionInSlice() {
+        final RuntimeException exception = new IllegalStateException("Failed to create response");
         this.start(
             (line, headers, body) -> {
-                throw new IllegalStateException("Failed to create response");
+                throw exception;
             }
         );
-        final int code = this.client.get(this.port, VertxSliceServerTest.HOST, "")
-            .rxSend()
-            .blockingGet()
-            .statusCode();
-        MatcherAssert.assertThat(
-            code,
-            Matchers.equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)
-        );
+        final HttpResponse<Buffer> response = this.client.get(
+            this.port, VertxSliceServerTest.HOST, ""
+        ).rxSend().blockingGet();
+        MatcherAssert.assertThat(response, new IsErrorResponse(exception));
     }
 
     @Test
     public void exceptionInResponse() {
+        final RuntimeException exception = new IllegalStateException("Failed to send response");
         this.start(
             (line, headers, body) -> connection -> {
-                throw new IllegalStateException("Failed to send response");
+                throw exception;
             }
         );
-        final int code = this.client.get(this.port, VertxSliceServerTest.HOST, "")
-            .rxSend()
-            .blockingGet()
-            .statusCode();
-        MatcherAssert.assertThat(
-            code,
-            Matchers.equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)
-        );
+        final HttpResponse<Buffer> response = this.client.get(
+            this.port, VertxSliceServerTest.HOST, ""
+        ).rxSend().blockingGet();
+        MatcherAssert.assertThat(response, new IsErrorResponse(exception));
     }
 
     @Test
     public void exceptionInResponseAsync() {
+        final RuntimeException exception = new IllegalStateException(
+            "Failed to send response async"
+        );
         this.start(
             (line, headers, body) -> connection -> CompletableFuture.runAsync(
                 () -> {
-                    throw new IllegalStateException("Failed to send response async");
+                    throw exception;
                 }
             )
         );
-        final int code = this.client.get(this.port, VertxSliceServerTest.HOST, "")
-            .rxSend()
-            .blockingGet()
-            .statusCode();
-        MatcherAssert.assertThat(
-            code,
-            Matchers.equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)
-        );
+        final HttpResponse<Buffer> response = this.client.get(
+            this.port, VertxSliceServerTest.HOST, ""
+        ).rxSend().blockingGet();
+        MatcherAssert.assertThat(response, new IsErrorResponse(exception));
     }
 
     @Test
     public void exceptionInBody() {
+        final Throwable exception = new IllegalStateException("Failed to publish body");
         this.start(
             (line, headers, body) -> connection -> connection.accept(
                 RsStatus.OK,
                 Collections.emptyList(),
-                Flowable.error(new IllegalStateException("Failed to publish body"))
+                Flowable.error(exception)
             )
         );
-        final int code = this.client.get(this.port, VertxSliceServerTest.HOST, "")
-            .rxSend()
-            .blockingGet()
-            .statusCode();
-        MatcherAssert.assertThat(
-            code,
-            Matchers.equalTo(HttpURLConnection.HTTP_INTERNAL_ERROR)
-        );
+        final HttpResponse<Buffer> response = this.client.get(
+            this.port, VertxSliceServerTest.HOST, ""
+        ).rxSend().blockingGet();
+        MatcherAssert.assertThat(response, new IsErrorResponse(exception));
     }
 
     private void start(final Slice slice) {
@@ -203,12 +201,62 @@ public final class VertxSliceServerTest {
 
     /**
      * Find a random port.
+     *
      * @return The free port.
      * @throws IOException If fails.
      */
     private int rndPort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
+        }
+    }
+
+    /**
+     * Matcher for HTTP response to check that it is proper error response.
+     *
+     * @since 0.1
+     */
+    private static class IsErrorResponse extends TypeSafeMatcher<HttpResponse<Buffer>> {
+
+        /**
+         * HTTP status code matcher.
+         */
+        private final Matcher<Integer> status;
+
+        /**
+         * HTTP body matcher.
+         */
+        private final Matcher<String> body;
+
+        /**
+         * Ctor.
+         *
+         * @param throwable Expected error response reason.
+         */
+        IsErrorResponse(final Throwable throwable) {
+            this.status = new IsEqual<>(HttpURLConnection.HTTP_INTERNAL_ERROR);
+            this.body = new AllOf<>(
+                Arrays.asList(
+                    new StringContains(false, throwable.getMessage()),
+                    new StringContains(false, throwable.getClass().getSimpleName())
+                )
+            );
+        }
+
+        @Override
+        public void describeTo(final Description description) {
+            description
+                .appendText("(")
+                .appendDescriptionOf(this.status)
+                .appendText(" and ")
+                .appendDescriptionOf(this.body)
+                .appendText(")");
+        }
+
+        @Override
+        public boolean matchesSafely(final HttpResponse<Buffer> response) {
+            return this.status.matches(response.statusCode())
+                && this.body.matches(response.bodyAsString());
         }
     }
 }
