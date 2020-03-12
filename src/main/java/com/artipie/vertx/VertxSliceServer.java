@@ -98,12 +98,15 @@ public final class VertxSliceServer implements Closeable {
 
     /**
      * Start the server.
+     *
+     * @return Port the server is listening on.
      */
-    public void start() {
+    public int start() {
         synchronized (this.sync) {
             this.server = this.vertx.createHttpServer();
             this.server.requestHandler(this.proxyHandler());
             this.server.rxListen(this.port).blockingGet();
+            return this.server.actualPort();
         }
     }
 
