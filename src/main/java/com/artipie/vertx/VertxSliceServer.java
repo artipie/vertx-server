@@ -76,6 +76,16 @@ public final class VertxSliceServer implements Closeable {
     /**
      * Ctor.
      *
+     * @param vertx The vertx.
+     * @param served The slice to be served.
+     */
+    public VertxSliceServer(final Vertx vertx, final Slice served) {
+        this(vertx, served, 0);
+    }
+
+    /**
+     * Ctor.
+     *
      * @param served The slice to be served.
      * @param port The port.
      */

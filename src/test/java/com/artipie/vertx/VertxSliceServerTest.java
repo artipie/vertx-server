@@ -198,8 +198,7 @@ public final class VertxSliceServerTest {
     public void serverMayStartOnRandomPort() {
         final VertxSliceServer srv = new VertxSliceServer(
             this.vertx,
-            (line, headers, body) -> connection -> connection.accept(RsStatus.OK, headers, body),
-            0
+            (line, headers, body) -> connection -> connection.accept(RsStatus.OK, headers, body)
         );
         MatcherAssert.assertThat(srv.start(), new IsNot<>(new IsEqual<>(0)));
     }
