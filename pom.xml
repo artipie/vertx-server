@@ -30,7 +30,7 @@ SOFTWARE.
     <version>0.3</version>
   </parent>
   <artifactId>vertx-server</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>0.2.2</version>
   <packaging>jar</packaging>
   <name>The Vert.x server</name>
   <description>A Vert.x which can serve artipie slices</description>
