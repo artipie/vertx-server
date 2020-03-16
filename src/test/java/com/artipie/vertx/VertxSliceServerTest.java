@@ -44,6 +44,7 @@ import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeMatcher;
 import org.hamcrest.core.AllOf;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsNot;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -191,6 +192,15 @@ public final class VertxSliceServerTest {
             this.port, VertxSliceServerTest.HOST, ""
         ).rxSend().blockingGet();
         MatcherAssert.assertThat(response, new IsErrorResponse(exception));
+    }
+
+    @Test
+    public void serverMayStartOnRandomPort() {
+        final VertxSliceServer srv = new VertxSliceServer(
+            this.vertx,
+            (line, headers, body) -> connection -> connection.accept(RsStatus.OK, headers, body)
+        );
+        MatcherAssert.assertThat(srv.start(), new IsNot<>(new IsEqual<>(0)));
     }
 
     private void start(final Slice slice) {

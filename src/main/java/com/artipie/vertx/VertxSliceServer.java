@@ -76,6 +76,16 @@ public final class VertxSliceServer implements Closeable {
     /**
      * Ctor.
      *
+     * @param vertx The vertx.
+     * @param served The slice to be served.
+     */
+    public VertxSliceServer(final Vertx vertx, final Slice served) {
+        this(vertx, served, 0);
+    }
+
+    /**
+     * Ctor.
+     *
      * @param served The slice to be served.
      * @param port The port.
      */
@@ -98,12 +108,15 @@ public final class VertxSliceServer implements Closeable {
 
     /**
      * Start the server.
+     *
+     * @return Port the server is listening on.
      */
-    public void start() {
+    public int start() {
         synchronized (this.sync) {
             this.server = this.vertx.createHttpServer();
             this.server.requestHandler(this.proxyHandler());
             this.server.rxListen(this.port).blockingGet();
+            return this.server.actualPort();
         }
     }
 
