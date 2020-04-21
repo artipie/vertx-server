@@ -23,6 +23,7 @@
  */
 package com.artipie.vertx;
 
+import com.artipie.http.Headers;
 import com.artipie.http.Slice;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
@@ -105,7 +106,9 @@ public final class VertxSliceServerTest {
     @Test
     public void serverHandlesBasicRequest() {
         this.start(
-            (line, headers, body) -> connection -> connection.accept(RsStatus.OK, headers, body)
+            (line, headers, body) -> connection -> connection.accept(
+                RsStatus.OK, new Headers.From(headers), body
+            )
         );
         final String expected = "Hello World!";
         final String actual = this.client.post(this.port, VertxSliceServerTest.HOST, "/hello")
@@ -121,7 +124,9 @@ public final class VertxSliceServerTest {
         this.start(
             (line, headers, body) -> connection -> connection.accept(
                 RsStatus.OK,
-                Collections.emptyList(),
+                new Headers.From(
+                    Collections.emptyList()
+                ),
                 Flowable.fromArray(ByteBuffer.wrap(expected.getBytes()))
             )
         );
@@ -184,7 +189,9 @@ public final class VertxSliceServerTest {
         this.start(
             (line, headers, body) -> connection -> connection.accept(
                 RsStatus.OK,
-                Collections.emptyList(),
+                new Headers.From(
+                    Collections.emptyList()
+                ),
                 Flowable.error(exception)
             )
         );
@@ -198,7 +205,9 @@ public final class VertxSliceServerTest {
     public void serverMayStartOnRandomPort() {
         final VertxSliceServer srv = new VertxSliceServer(
             this.vertx,
-            (line, headers, body) -> connection -> connection.accept(RsStatus.OK, headers, body)
+            (line, headers, body) ->
+                connection ->
+                    connection.accept(RsStatus.OK, new Headers.From(headers), body)
         );
         MatcherAssert.assertThat(srv.start(), new IsNot<>(new IsEqual<>(0)));
     }
