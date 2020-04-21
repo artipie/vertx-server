@@ -26,6 +26,16 @@ This is the dependency you need:
 Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/vertx-server)
 for more technical details.
 
+## Usage example
+
+```java
+final Vertx vertx = Vertx.vertx();
+final int port = 8080;
+final Slice slice = ...; // some Slice implementation
+final VertxSliceServer server = new VertxSliceServer(vertx, slice, port);
+server.start();
+```
+
 ## How to contribute
 
 Fork repository, make changes, send us a pull request. We will review
