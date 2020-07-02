@@ -113,6 +113,9 @@ public final class VertxSliceServer implements Closeable {
      */
     public int start() {
         synchronized (this.sync) {
+            if (this.server != null) {
+                throw new IllegalStateException("Server was already started");
+            }
             this.server = this.vertx.createHttpServer();
             this.server.requestHandler(this.proxyHandler());
             this.server.rxListen(this.port).blockingGet();
