@@ -48,6 +48,7 @@ import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNot;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -56,6 +57,7 @@ import org.junit.jupiter.api.Test;
  *
  * @since 0.1
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class VertxSliceServerTest {
 
     /**
@@ -210,6 +212,20 @@ public final class VertxSliceServerTest {
                     connection.accept(RsStatus.OK, new Headers.From(headers), body)
         );
         MatcherAssert.assertThat(srv.start(), new IsNot<>(new IsEqual<>(0)));
+    }
+
+    @Test
+    void repeatedServerStartTest() {
+        this.start(
+            (s, iterable, publisher) -> {
+                throw new IllegalStateException("Request serving is not expected in this test");
+            }
+        );
+        final IllegalStateException err = Assertions.assertThrows(
+            IllegalStateException.class,
+            this.server::start
+        );
+        Assertions.assertEquals("Server was already started", err.getMessage());
     }
 
     private void start(final Slice slice) {
