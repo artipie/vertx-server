@@ -221,7 +221,11 @@ public final class VertxSliceServerTest {
                 throw new IllegalStateException("Request serving is not expected in this test");
             }
         );
-        Assertions.assertThrows(IllegalStateException.class, this.server::start);
+        final IllegalStateException err = Assertions.assertThrows(
+            IllegalStateException.class,
+            this.server::start
+        );
+        Assertions.assertEquals("Server was already started", err.getMessage());
     }
 
     private void start(final Slice slice) {
