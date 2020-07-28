@@ -165,6 +165,9 @@ public final class VertxSliceServer implements Closeable {
      * @return Completion of request serving.
      */
     private CompletionStage<Void> serve(final HttpServerRequest req) {
+        if (expectContinue(req)) {
+            req.response().writeContinue();
+        }
         return this.served.response(
             new RequestLine(req.rawMethod(), req.uri(), req.version().toString()).toString(),
             req.headers(),
@@ -204,5 +207,15 @@ public final class VertxSliceServer implements Closeable {
         body.append(throwable.toString()).append("\n");
         throwable.printStackTrace(new PrintWriter(body));
         response.end(body.toString());
+    }
+
+    /**
+     * Check if request expects continue response to be sent before body.
+     * @param req HTTP request
+     * @return True if expects continue
+     */
+    private static boolean expectContinue(final HttpServerRequest req) {
+        final String hdr = req.headers().get("expect");
+        return hdr != null && hdr.equalsIgnoreCase("100-continue");
     }
 }
