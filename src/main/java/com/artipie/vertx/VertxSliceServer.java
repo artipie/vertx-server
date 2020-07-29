@@ -25,10 +25,8 @@ package com.artipie.vertx;
 
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RequestLine;
-import io.reactivex.Flowable;
 import io.vertx.core.Handler;
 import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.http.HttpServer;
 import io.vertx.reactivex.core.http.HttpServerRequest;
 import io.vertx.reactivex.core.http.HttpServerResponse;
@@ -37,8 +35,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -165,31 +161,12 @@ public final class VertxSliceServer implements Closeable {
      * @return Completion of request serving.
      */
     private CompletionStage<Void> serve(final HttpServerRequest req) {
+        final HttpServerResponse response = req.response();
         return this.served.response(
             new RequestLine(req.rawMethod(), req.uri(), req.version().toString()).toString(),
             req.headers(),
             req.toFlowable().map(buffer -> ByteBuffer.wrap(buffer.getBytes()))
-        ).send(
-            (status, headers, body) -> {
-                final int code = Integer.parseInt(status.code());
-                final HttpServerResponse response = req.response().setStatusCode(code);
-                for (final Map.Entry<String, String> header : headers) {
-                    response.putHeader(header.getKey(), header.getValue());
-                }
-                response.setChunked(true);
-                final CompletableFuture<HttpServerResponse> promise = new CompletableFuture<>();
-                Flowable.fromPublisher(body).map(
-                    buf -> {
-                        final byte[] bytes = new byte[buf.remaining()];
-                        buf.get(bytes);
-                        return Buffer.buffer(bytes);
-                    })
-                    .doOnComplete(() -> promise.complete(response))
-                    .doOnError(promise::completeExceptionally)
-                    .subscribe(response.toSubscriber());
-                return promise.thenCompose(ignored -> CompletableFuture.allOf());
-            }
-        );
+        ).send(new ContinueConnection(response, new VertxConnection(response)));
     }
 
     /**
