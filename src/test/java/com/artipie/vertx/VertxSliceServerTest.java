@@ -26,6 +26,7 @@ package com.artipie.vertx;
 import com.artipie.http.Headers;
 import com.artipie.http.Slice;
 import com.artipie.http.rs.RsStatus;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
@@ -137,6 +138,36 @@ public final class VertxSliceServerTest {
             .blockingGet()
             .bodyAsString();
         MatcherAssert.assertThat(actual, Matchers.equalTo(expected));
+    }
+
+    @Test
+    public void basicGetRequestWithContentLengthHeader() {
+        final String clh = "Content-Length";
+        final String expected = "Hello World!!!!!";
+        this.start(
+            (line, headers, body) -> connection -> connection.accept(
+                RsStatus.OK,
+                new Headers.From(
+                    clh,
+                    Integer.toString(expected.length())
+                ),
+                Flowable.fromArray(ByteBuffer.wrap(expected.getBytes()))
+            )
+        );
+        final HttpResponse<Buffer> response = this.client.get(
+            this.port,
+            VertxSliceServerTest.HOST,
+            "/hello2"
+        )
+            .rxSend()
+            .blockingGet();
+        final String actual = response.bodyAsString();
+        MatcherAssert.assertThat(actual, Matchers.equalTo(expected));
+        MatcherAssert.assertThat(response.getHeader(clh), Matchers.notNullValue());
+        MatcherAssert.assertThat(
+            response.getHeader(String.valueOf(HttpHeaderNames.TRANSFER_ENCODING)),
+            Matchers.nullValue()
+        );
     }
 
     @Test

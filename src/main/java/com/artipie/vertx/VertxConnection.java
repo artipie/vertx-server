@@ -62,13 +62,23 @@ final class VertxConnection implements Connection {
         for (final Map.Entry<String, String> header : headers) {
             this.rsp.putHeader(header.getKey(), header.getValue());
         }
-        this.rsp.setChunked(true);
         final CompletableFuture<HttpServerResponse> promise = new CompletableFuture<>();
-        Flowable.fromPublisher(body)
+        final Flowable<Buffer> vpb = Flowable.fromPublisher(body)
             .map(VertxConnection::mapBuffer)
-            .doOnComplete(() -> promise.complete(this.rsp))
-            .doOnError(promise::completeExceptionally)
-            .subscribe(this.rsp.toSubscriber());
+            .doOnError(promise::completeExceptionally);
+        if (this.rsp.headers().contains("Content-Length")) {
+            this.rsp.setChunked(false);
+            vpb.doOnComplete(
+                () -> {
+                    this.rsp.end();
+                    promise.complete(this.rsp);
+                }
+            ).forEach(this.rsp::write);
+        } else {
+            this.rsp.setChunked(true);
+            vpb.doOnComplete(() -> promise.complete(this.rsp))
+                .subscribe(this.rsp.toSubscriber());
+        }
         return promise.thenCompose(ignored -> CompletableFuture.allOf());
     }
 
