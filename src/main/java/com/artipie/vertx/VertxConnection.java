@@ -69,12 +69,11 @@ final class VertxConnection implements Connection {
         if (this.rsp.headers().contains("Content-Length")) {
             this.rsp.setChunked(false);
             vpb.doOnComplete(
-                    () -> {
-                        this.rsp.end();
-                        promise.complete(this.rsp);
-                    }
-                )
-                .forEach(this.rsp::write);
+                () -> {
+                    this.rsp.end();
+                    promise.complete(this.rsp);
+                }
+            ).forEach(this.rsp::write);
         } else {
             this.rsp.setChunked(true);
             vpb.doOnComplete(() -> promise.complete(this.rsp))
