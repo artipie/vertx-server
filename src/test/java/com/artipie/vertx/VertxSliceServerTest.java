@@ -122,7 +122,7 @@ public final class VertxSliceServerTest {
 
     @Test
     public void basicGetRequest() {
-        final String expected = "Hello World!!!";
+        final String expected = "Hello World!!!!";
         this.start(
             (line, headers, body) -> connection -> connection.accept(
                 RsStatus.OK,
@@ -152,7 +152,7 @@ public final class VertxSliceServerTest {
                 Flowable.fromArray(ByteBuffer.wrap(expected.getBytes()))
             )
         );
-        final String actual = this.client.get(this.port, VertxSliceServerTest.HOST, "/hello1")
+        final String actual = this.client.get(this.port, VertxSliceServerTest.HOST, "/hello2")
             .rxSend()
             .blockingGet()
             .bodyAsString();
