@@ -140,6 +140,26 @@ public final class VertxSliceServerTest {
     }
 
     @Test
+    public void basicGetRequestCL() {
+        final String expected = "Hello World!!!";
+        this.start(
+            (line, headers, body) -> connection -> connection.accept(
+                RsStatus.OK,
+                new Headers.From(
+                    "Content-Length",
+                    Integer.toString(expected.length())
+                ),
+                Flowable.fromArray(ByteBuffer.wrap(expected.getBytes()))
+            )
+        );
+        final String actual = this.client.get(this.port, VertxSliceServerTest.HOST, "/hello1")
+            .rxSend()
+            .blockingGet()
+            .bodyAsString();
+        MatcherAssert.assertThat(actual, Matchers.equalTo(expected));
+    }
+
+    @Test
     public void exceptionInSlice() {
         final RuntimeException exception = new IllegalStateException("Failed to create response");
         this.start(
