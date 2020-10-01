@@ -123,7 +123,7 @@ public final class VertxSliceServerTest {
 
     @Test
     public void basicGetRequest() {
-        final String expected = "Hello World!!!!";
+        final String expected = "Hello World!!!";
         this.start(
             (line, headers, body) -> connection -> connection.accept(
                 RsStatus.OK,
