@@ -163,7 +163,7 @@ public final class VertxSliceServer implements Closeable {
     private CompletionStage<Void> serve(final HttpServerRequest req) {
         final HttpServerResponse response = req.response();
         return this.served.response(
-            new RequestLine(req.rawMethod(), req.uri(), req.version().toString()).toString(),
+            new RequestLine(req.method().name(), req.uri(), req.version().toString()).toString(),
             req.headers(),
             req.toFlowable().map(buffer -> ByteBuffer.wrap(buffer.getBytes()))
         ).send(new ContinueConnection(response, new VertxConnection(response)));
