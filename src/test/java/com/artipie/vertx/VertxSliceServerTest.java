@@ -28,7 +28,6 @@ import com.artipie.http.Slice;
 import com.artipie.http.rs.RsStatus;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.reactivex.Flowable;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.web.client.HttpResponse;
