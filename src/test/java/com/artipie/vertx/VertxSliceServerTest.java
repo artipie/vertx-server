@@ -28,6 +28,7 @@ import com.artipie.http.Slice;
 import com.artipie.http.rs.RsStatus;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.reactivex.Flowable;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.web.client.HttpResponse;
@@ -243,6 +244,23 @@ public final class VertxSliceServerTest {
                     connection.accept(RsStatus.OK, new Headers.From(headers), body)
         );
         MatcherAssert.assertThat(srv.start(), new IsNot<>(new IsEqual<>(0)));
+    }
+
+    @Test
+    public void serverStartsWithHttpServerOptions() {
+        final int expected = 88;
+        final VertxSliceServer srv = new VertxSliceServer(
+            this.vertx,
+            (line, headers, body) ->
+                connection ->
+                    connection.accept(
+                        RsStatus.OK,
+                        new Headers.From(headers),
+                        body
+                    ),
+            new HttpServerOptions().setPort(expected)
+        );
+        MatcherAssert.assertThat(srv.start(), new IsEqual<>(expected));
     }
 
     @Test

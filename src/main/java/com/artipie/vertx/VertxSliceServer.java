@@ -26,6 +26,7 @@ package com.artipie.vertx;
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RequestLine;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.http.HttpServer;
 import io.vertx.reactivex.core.http.HttpServerRequest;
@@ -55,9 +56,9 @@ public final class VertxSliceServer implements Closeable {
     private final Slice served;
 
     /**
-     * The port to start server on.
+     * Represents options used by an HttpServer instance.
      */
-    private final Integer port;
+    private final HttpServerOptions options;
 
     /**
      * The Http server.
@@ -76,7 +77,7 @@ public final class VertxSliceServer implements Closeable {
      * @param served The slice to be served.
      */
     public VertxSliceServer(final Vertx vertx, final Slice served) {
-        this(vertx, served, 0);
+        this(vertx, served, new HttpServerOptions().setPort(0));
     }
 
     /**
@@ -86,19 +87,39 @@ public final class VertxSliceServer implements Closeable {
      * @param port The port.
      */
     public VertxSliceServer(final Slice served, final Integer port) {
-        this(Vertx.vertx(), served, port);
+        this(Vertx.vertx(), served, new HttpServerOptions().setPort(port));
     }
 
     /**
      * Ctor.
+     *
      * @param vertx The vertx.
      * @param served The slice to be served.
      * @param port The port.
      */
-    public VertxSliceServer(final Vertx vertx, final Slice served, final Integer port) {
+    public VertxSliceServer(
+        final Vertx vertx,
+        final Slice served,
+        final Integer port
+    ) {
+        this(vertx, served, new HttpServerOptions().setPort(port));
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param vertx The vertx.
+     * @param served The slice to be served.
+     * @param options The options to use.
+     */
+    public VertxSliceServer(
+        final Vertx vertx,
+        final Slice served,
+        final HttpServerOptions options
+    ) {
         this.vertx = vertx;
         this.served = served;
-        this.port = port;
+        this.options = options;
         this.sync = new Object();
     }
 
@@ -112,9 +133,9 @@ public final class VertxSliceServer implements Closeable {
             if (this.server != null) {
                 throw new IllegalStateException("Server was already started");
             }
-            this.server = this.vertx.createHttpServer();
+            this.server = this.vertx.createHttpServer(this.options);
             this.server.requestHandler(this.proxyHandler());
-            this.server.rxListen(this.port).blockingGet();
+            this.server.rxListen().blockingGet();
             return this.server.actualPort();
         }
     }
