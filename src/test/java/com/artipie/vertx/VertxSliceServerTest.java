@@ -248,7 +248,7 @@ public final class VertxSliceServerTest {
 
     @Test
     public void serverStartsWithHttpServerOptions() {
-        final int expected = 88;
+        final int expected = 81;
         final VertxSliceServer srv = new VertxSliceServer(
             this.vertx,
             (line, headers, body) ->
