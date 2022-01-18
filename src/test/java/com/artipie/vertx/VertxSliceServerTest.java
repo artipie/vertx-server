@@ -247,23 +247,6 @@ public final class VertxSliceServerTest {
     }
 
     @Test
-    public void serverStartsWithHttpServerOptions() {
-        final int expected = 81;
-        final VertxSliceServer srv = new VertxSliceServer(
-            this.vertx,
-            (line, headers, body) ->
-                connection ->
-                    connection.accept(
-                        RsStatus.OK,
-                        new Headers.From(headers),
-                        body
-                    ),
-            new HttpServerOptions().setPort(expected)
-        );
-        MatcherAssert.assertThat(srv.start(), new IsEqual<>(expected));
-    }
-
-    @Test
     void repeatedServerStartTest() {
         this.start(
             (s, iterable, publisher) -> {
