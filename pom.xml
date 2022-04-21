@@ -24,27 +24,30 @@ SOFTWARE.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>com.artipie</groupId>
     <artifactId>ppom</artifactId>
-    <version>1.0.4</version>
+    <version>2.0-SNAPSHOT</version>
+    <relativePath/>
   </parent>
+
   <artifactId>vertx-server</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
-  <name>The Vert.x server</name>
-  <description>A Vert.x which can serve artipie slices</description>
+
+  <name>${project.groupId}:${project.artifactId}</name>
+  <description>A Vert.x which can serve Artipie Slices</description>
   <url>https://github.com/artipie/vertx-server</url>
+
   <inceptionYear>2020</inceptionYear>
+
   <licenses>
     <license>
       <name>MIT</name>
       <url>https://github.com/artipie/vertx-server/blob/master/LICENSE</url>
     </license>
   </licenses>
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+
   <developers>
     <developer>
       <id>1</id>
@@ -59,52 +62,61 @@ SOFTWARE.
       <timezone>+1</timezone>
     </developer>
   </developers>
+
   <issueManagement>
     <system>GitHub</system>
     <url>https://github.com/artipie/vertx-server/issues</url>
   </issueManagement>
+
   <scm>
     <connection>scm:git:git@github.com:artipie/vertx-server.git</connection>
     <developerConnection>scm:git:git@github.com:artipie/vertx-server.git</developerConnection>
     <url>https://github.com/artipie/vertx-server</url>
   </scm>
+
   <ciManagement>
     <system>rultor</system>
     <url>https://www.rultor.com/s/vertx-server</url>
   </ciManagement>
+
   <distributionManagement>
     <site>
       <id>github-pages</id>
       <url>https://github.com/artipie/vertx-server</url>
     </site>
   </distributionManagement>
+
+  <properties>
+    <qulice.license>${project.basedir}/LICENSE.txt</qulice.license>
+    <maven.compiler.release>17</maven.compiler.release>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>http</artifactId>
       <version>0.16.2</version>
     </dependency>
+
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-rx-java2</artifactId>
     </dependency>
+
     <dependency>
       <groupId>com.jcabi</groupId>
       <artifactId>jcabi-log</artifactId>
     </dependency>
+
+    <!-- Test only dependencies -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-    </dependency>
-    <!-- Test only dependencies -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>1.7.21</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -115,7 +127,6 @@ SOFTWARE.
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest</artifactId>
-      <version>2.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
