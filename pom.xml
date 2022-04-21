@@ -100,12 +100,15 @@ SOFTWARE.
 
     <dependency>
       <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
       <artifactId>vertx-rx-java2</artifactId>
     </dependency>
-
     <dependency>
-      <groupId>com.jcabi</groupId>
-      <artifactId>jcabi-log</artifactId>
+      <groupId>org.reactivestreams</groupId>
+      <artifactId>reactive-streams</artifactId>
     </dependency>
 
     <!-- Test only dependencies -->

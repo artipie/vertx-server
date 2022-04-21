@@ -26,7 +26,6 @@ package com.artipie.vertx;
 import com.artipie.http.Headers;
 import com.artipie.http.Slice;
 import com.artipie.http.rs.RsStatus;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.reactivex.Flowable;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.reactivex.core.Vertx;
@@ -166,7 +165,7 @@ public final class VertxSliceServerTest {
         MatcherAssert.assertThat(actual, Matchers.equalTo(expected));
         MatcherAssert.assertThat(response.getHeader(clh), Matchers.notNullValue());
         MatcherAssert.assertThat(
-            response.getHeader(String.valueOf(HttpHeaderNames.TRANSFER_ENCODING)),
+            response.getHeader(String.valueOf("Transfer-Encoding")),
             Matchers.nullValue()
         );
     }
