@@ -4,9 +4,9 @@
 [![DevOps By Rultor.com](http://www.rultor.com/b/artipie/vertx-server)](http://www.rultor.com/p/artipie/vertx-server)
 [![We recommend IntelliJ IDEA](https://www.elegantobjects.org/intellij-idea.svg)](https://www.jetbrains.com/idea/)
 
-[![Build Status](https://img.shields.io/travis/artipie/vertx-server/master.svg)](https://travis-ci.org/artipie/vertx-server)
 [![Javadoc](http://www.javadoc.io/badge/com.artipie/vertx-server.svg)](http://www.javadoc.io/doc/com.artipie/vertx-server)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/artipie/vertx-server/blob/master/LICENSE)
+[![codecov](https://codecov.io/gh/artipie/vertx-server/branch/master/graph/badge.svg)](https://codecov.io/gh/artipie/vertx-server)
 [![Hits-of-Code](https://hitsofcode.com/github/artipie/vertx-server)](https://hitsofcode.com/view/github/artipie/vertx-server)
 [![Maven Central](https://img.shields.io/maven-central/v/com.artipie/vertx-server.svg)](https://maven-badges.herokuapp.com/maven-central/com.artipie/vertx-server)
 [![PDD status](http://www.0pdd.com/svg?name=artipie/vertx-server)](http://www.0pdd.com/p?name=artipie/vertx-server)
@@ -25,6 +25,8 @@ This is the dependency you need:
 
 Read the [Javadoc](http://www.javadoc.io/doc/com.artipie/vertx-server)
 for more technical details.
+If you have any question or suggestions, do not hesitate to create an issue or contact us in
+[Telegram](https://t.me/artipie). Artipie roadmap is available [here](https://github.com/orgs/artipie/projects/3).]
 
 ## Usage example
 
