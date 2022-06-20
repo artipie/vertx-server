@@ -11,7 +11,10 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.artipie/vertx-server.svg)](https://maven-badges.herokuapp.com/maven-central/com.artipie/vertx-server)
 [![PDD status](http://www.0pdd.com/svg?name=artipie/vertx-server)](http://www.0pdd.com/p?name=artipie/vertx-server)
 
-This is a simple storage, used in a few other projects.
+This is a http server based on [HttpServer](https://vertx.io/docs/apidocs/index.html?io/vertx/reactivex/core/http/HttpServer.html) 
+from [Vert.x Core](https://vertx.io/docs/vertx-core/java/), used by [artipie](https://github.com/artipie/artipie) 
+project and by some artipie`s adapters (for example, [maven-adapter](https://github.com/artipie/maven-adapter),
+[rpm-adapter](https://github.com/artipie/rpm-adapter)) to implement integration tests.
 
 This is the dependency you need:
 
